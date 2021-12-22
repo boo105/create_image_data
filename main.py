@@ -3,8 +3,6 @@ import json
 import cv2
 from PIL import Image
 
-
-
 """
 1. BIC 또는 TYPESIZE 
 바운딩 크기만큼 이미지 크롭해 저장해야함
@@ -15,7 +13,7 @@ from PIL import Image
 
 """
 
-images_path = "C:/Users/boo10/OneDrive/Desktop/hackathon/hackathon/"
+images_path = "D:/hackathon/hackathon/"
 
 def find_first_point(points) :
     y_min = 99999999
@@ -81,51 +79,22 @@ def find_last_point(points) :
     if last_index != -1 :
         return last_index
 
+def change_points(x1, y1, x2, y2) :
+    temp_x = x2
+    temp_y = y2
+    x2 = x1
+    y2 = y1
+    x1 = temp_x
+    y1 = temp_y
 
-def get_width(points) :
-    x_max = 0
-    x_min = 99999999
-    max_index = -1
-    min_index = -1
-    i = 0
-
-    for point in points :
-        if point[0] > x_max :
-            x_max = point[0]
-            max_index = i
-        if point[0] < x_min :
-            x_min = point[0]
-            min_index = i
-        i += 1
-            
-    width = int(points[max_index][0]) - int(points[min_index][0])
-    return width
-
-def get_height(points) :
-    x_max = 0
-    x_min = 99999999
-    max_index = -1
-    min_index = -1
-    i = 0
-
-    for point in points :
-        if point[1] > x_max :
-            x_max = point[1]
-            max_index = i
-        if point[1] < x_min :
-            x_min = point[1]
-            min_index = i
-        i += 1
-            
-    height = int(points[max_index][1]) - int(points[min_index][1])
-    return height
+    return x1, y1, x2, y2
 
 def mouse_callback(event, x, y, flags, param): 
     print("마우스 이벤트 발생, x:", x ," y:", y) # 이벤트 발생한 마우스 위치 출력
 
 def crop_image_horizontal(points, image_name,bbox_id ,i) :
-    image = cv2.imread(images_path + image_name + ".jpg")
-    # image = Image.open(images_path + image_name + ".jpg")
+    # image = cv2.imread(images_path + image_name + ".jpg")
+    image = Image.open(images_path + image_name + ".jpg")
 
     first_index = find_first_point(points)
     last_index = find_last_point(points)
@@ -135,101 +104,63 @@ def crop_image_horizontal(points, image_name,bbox_id ,i) :
 
     last_x = points[last_index][0]
     last_y = points[last_index][1]
-        
-    # area = (start_x, start_y, last_x, last_y)
-    # crop_img = image.crop(area)
 
     print(f"s_x : {start_x}, s_y {start_y}, l_x : {last_x}, l_y : {last_y}")
     
     if bbox_id == "BIC" :
         if start_x > last_x : 
-            temp_x = last_x
-            temp_y = last_y
-            last_x = start_x
-            last_y = start_y
-            start_x = temp_x
-            start_y = temp_y
+            start_x, start_y, last_x, last_y = change_points(start_x, start_y, last_x, last_y)
 
         if last_y < start_y :
-            distance = (start_y - last_y) * 1.3
+            distance = (start_y - last_y) * 1.2
+            start_y -= distance
+            last_y += distance
+        
+        if last_y - start_y < 30 :
+            start_y -= 30
+            last_y += 30
+        
+        if last_x - start_x < 20 :
+            start_x -= 10
+            last_x += 10
+    else :
+        if start_x > last_x : 
+            start_x, start_y, last_x, last_y = change_points(start_x, start_y, last_x, last_y)
+        
+        if last_y < start_y :
+            distance = (start_y - last_y)
             start_y -= distance
             last_y += distance
 
-    # area = (start_x, start_y, last_x, last_y)
-    # crop_img = image.crop(area)
+        if last_y - start_y < 10 :
+            start_y -= 20
+            last_y += 20
 
-    if i == 51 :
-        image = cv2.line(image, (int(start_x), int(start_y)),(int(start_x), int(start_y)), (255,0,0), 5)
-        image = cv2.line(image, (int(last_x), int(last_y)),(int(last_x), int(last_y)), (255,0,0), 5)
+    area = (start_x, start_y, last_x, last_y)
+    crop_img = image.crop(area)
 
-        cv2.namedWindow('image')
-        cv2.setMouseCallback('image', mouse_callback)
-        cv2.imshow("image",image)
-        if cv2.waitKey(0) == ord('q'):
-            cv2.destroyAllWindows()  
-        print(f"s_x : {start_x}, s_y {start_y}, l_x : {last_x}, l_y : {last_y}")
-        # print(area)
-        # print(crop_img.size)
-        quit()
+    # if i == 70 :
+    #     # image = cv2.line(image, (int(start_x), int(start_y)),(int(start_x), int(start_y)), (255,0,0), 5)
+    #     # image = cv2.line(image, (int(last_x), int(last_y)),(int(last_x), int(last_y)), (255,0,0), 5)
 
-    # try :
-    #     crop_img.save(f"data/{image_name}_{i}.jpg")
-    # except :
+    #     # cv2.namedWindow('image')
+    #     # cv2.setMouseCallback('image', mouse_callback)
+    #     # cv2.imshow("image",image)
+    #     # if cv2.waitKey(0) == ord('q'):
+    #     #     cv2.destroyAllWindows()  
+    #     print(f"s_x : {start_x}, s_y {start_y}, l_x : {last_x}, l_y : {last_y}")
+    #     print(area)
     #     print(crop_img.size)
-    #     print(i)
-        # if start_x > last_x : 
-        #     print(f"s_x : {start_x}, s_y {start_y}, l_x : {last_x}, l_y : {last_y}")
-        #     if start_y < last_y :
-        #         distance = (last_y - start_y) * 1.4
-        #         last_y -= distance
-        #         start_y += distance
-        #     area2 = (last_x, last_y, start_x, start_y)
-        #     crop_img2 = image.crop(area2)
-        #     print(f"s_x : {start_x}, s_y {start_y}, l_x : {last_x}, l_y : {last_y}")
-        #     print(crop_img2.size)
-        #     crop_img2.save(f"data/{image_name}_{i}.jpg")
+    #     quit()
 
-
-        
-        # print(f"s_x : {start_x}, s_y {start_y}, l_x : {last_x}, l_y : {last_y}")
-        # area2 = (start_x, start_y, last_x, last_y + 60)
-        # crop_img2 = image.crop(area2)
-        # print(crop_img2.size)
-        # crop_img2.save(f"data/{image_name}_{i}.jpg")
-        
-        
-
-    # width = get_width(points)
-    # height = get_height(points)
-
-    # if i == 50 :
-    #     # image = cv2.line(image, (int(points[0][0]), int(points[0][1])),(int(points[0][0]), int(points[0][1])), (255,0,0), 5)
-    #     # image = cv2.line(image, (int(points[1][0]), int(points[1][1])),(int(points[1][0]), int(points[1][1])), (255,0,0), 5)
-    #     # image = cv2.line(image, (int(points[2][0]), int(points[2][1])),(int(points[2][0]), int(points[2][1])), (255,0,0), 5)
-    #     # image = cv2.line(image, (int(points[3][0]), int(points[3][1])),(int(points[3][0]), int(points[3][1])), (255,0,0), 5)
-    #     image = cv2.line(image, (start_x, start_y),(start_x, start_y), (255,0,0), 5)
-    #     image = cv2.line(image, (last_x, last_y),(last_x, last_y), (255,0,0), 5)
-
-    #     cv2.namedWindow('image')
-    #     cv2.setMouseCallback('image', mouse_callback)
-    #     cv2.imshow("image",image)
-    #     if cv2.waitKey(0) == ord('q'):
-    #         cv2.destroyAllWindows()  
-
-    # print(f"s_x : {start_x}, s_y {start_y}, w : {width}, h : {height}")
-    # try :
-    #     crop_img = image[start_y:last_y, start_x:last_x]
-    # except :
-    #     print(i)
-    #     crop_img = image[start_y:last_y + 60, start_x:last_x]
+    try :
+        crop_img.save(f"data/V-ST/{image_name}_{i}.jpg")
+    except :
+        print(crop_img.size)
+        print(i)
 
     # crop_img = cv2.line(image, (start_x, start_y),(start_x, start_y), (255,0,0), 5)
     # crop_img = cv2.line(image, (last_x, last_y),(last_x, last_y), (255,0,0), 5)
-
-    # crop_img = cv2.line(image, (int(points[0][0]), int(points[0][1])),(int(points[0][0]), int(points[0][1])), (255,0,0), 5)
-    # crop_img = cv2.line(crop_img, (int(points[1][0]), int(points[1][1])),(int(points[1][0]), int(points[1][1])), (255,0,0), 5)
-    # crop_img = cv2.line(crop_img, (int(points[2][0]), int(points[2][1])),(int(points[2][0]), int(points[2][1])), (255,0,0), 5)
-    # crop_img = cv2.line(crop_img, (int(points[3][0]), int(points[3][1])),(int(points[3][0]), int(points[3][1])), (255,0,0), 5)
 
     # try :
     #     cv2.imwrite(f"data/{image_name}_{i}.jpg", crop_img)
@@ -247,12 +178,10 @@ def save_label(image_name, i, label) :
         f.write(f"data/{image_name}_{i}.jpg\t{label}\n")
         f.close()
 
-
-
 if __name__ == "__main__" :
     i = 1
 
-    for file in os.listdir(images_path)[:100] :
+    for file in os.listdir(images_path)[37400:44000] :
         if file.find(".json") != -1 :
             print(file)
             with open(images_path + file, "r", encoding="UTF-8") as f :
